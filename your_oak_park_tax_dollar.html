@@ -1,0 +1,222 @@
+
+<div style="padding: 0.5rem 0;">
+
+<div style="margin-bottom: 1.25rem;">
+  <h2 style="font-size: 18px; font-weight: 500; margin: 0 0 4px; color: var(--color-text-primary);">Your Oak Park Tax Dollar</h2>
+  <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0; line-height: 1.5;">How your property tax bill breaks down across Village services and obligations.</p>
+</div>
+
+<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; padding: 10px 14px; background: var(--color-background-secondary); border-radius: var(--border-radius-md);">
+  <span style="font-size: 13px; color: var(--color-text-secondary); white-space: nowrap;">your annual tax bill</span>
+  <div style="display: flex; align-items: center; gap: 3px; flex: 1; max-width: 150px; border-bottom: 1.5px solid var(--color-border-secondary); padding-bottom: 2px;">
+    <span style="font-size: 15px; font-weight: 500; color: var(--color-text-primary);">$</span>
+    <input type="number" id="taxInput" value="10000" min="1" max="999999"
+      style="width: 100%; font-size: 15px; font-weight: 500; border: none; background: transparent; color: var(--color-text-primary); outline: none; -moz-appearance: textfield; -webkit-appearance: none;">
+  </div>
+  <button id="resetBtn" style="margin-left: auto; font-size: 11px; padding: 4px 10px; cursor: pointer;">reset bars</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 1.5rem;">
+  <div style="background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.875rem; text-align: center;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">total Village-related</div>
+    <div id="card-total" style="font-size: 20px; font-weight: 500;">$1,520</div>
+    <div id="card-total-sub" style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px;">of $10,000</div>
+    <div id="card-total-mo" style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 1px; font-weight: 500;">$126.67/mo</div>
+  </div>
+  <div style="background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.875rem; text-align: center;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">general levy (8.5%)</div>
+    <div id="card-general" style="font-size: 20px; font-weight: 500; color: #185FA5;">$850</div>
+    <div id="card-general-sub" style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px;">10 depts active</div>
+    <div id="card-general-mo" style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 1px; font-weight: 500;">$70.83/mo</div>
+  </div>
+  <div style="background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.875rem; text-align: center;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">pension levy (6.7%)</div>
+    <div id="card-pension" style="font-size: 20px; font-weight: 500; color: #993C1D;">$670</div>
+    <div id="card-pension-sub" style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px;">direct to boards</div>
+    <div id="card-pension-mo" style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 1px; font-weight: 500;">$55.83/mo</div>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 10px;">
+  <span style="font-size: 11px; color: var(--color-text-tertiary);">bar values:</span>
+  <div style="display: flex; border: 0.5px solid var(--color-border-secondary); border-radius: 6px; overflow: hidden;">
+    <button id="btn-annual"  style="padding: 3px 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 500; background: var(--color-background-primary); color: var(--color-text-primary); border-right: 0.5px solid var(--color-border-secondary);">Annual</button>
+    <button id="btn-monthly" style="padding: 3px 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 400; background: transparent; color: var(--color-text-secondary);">Monthly</button>
+  </div>
+</div>
+
+<div id="bars"></div>
+<div style="margin-top: 10px; font-size: 11px; color: var(--color-text-tertiary);">click a bar to exclude it from totals · click ⓘ to see what's included</div>
+</div>
+
+<script>
+const VP = 0.085, PP = 0.067;
+const DEPTS = [
+  { name: 'Police (operations)', pct: 0.312, type: 'ops', color: '#D85A30',
+    desc: 'Day-to-day law enforcement, patrol, investigations, and community safety programs.',
+    services: ['Patrol & field services','Investigations & support','Parking enforcement','School resource officers','CTA patrol','WSCDC dispatch contract','Records & administration','Community programs'] },
+  { name: 'Fire (operations)', pct: 0.219, type: 'ops', color: '#EF9F27',
+    desc: 'Fire suppression, emergency medical response, prevention, and training.',
+    services: ['Fire operations & suppression','Emergency medical services (EMS)','Ambulance transport','Fire prevention & investigation','Training & public education','Fire administration'] },
+  { name: 'Finance', pct: 0.169, type: 'ops', color: '#378ADD',
+    desc: 'Budget management, treasury, payroll, and central accounting. Includes ~$5M in transfers to capital, debt service, and reserve funds.',
+    services: ['Budget & treasury','Accounts payable & receivable','Payroll processing','Purchasing & procurement','Audit & compliance','Debt service transfers','Capital & equipment fund transfers','Self-insurance reserve transfers'] },
+  { name: 'Public Works', pct: 0.086, type: 'ops', color: '#185FA5',
+    desc: 'Streets, infrastructure, Village buildings, urban forestry, and the municipal vehicle fleet.',
+    services: ['Street maintenance & repair','Snow & ice removal','Street lighting & signals','Forestry & urban tree care','Village building maintenance','Fleet operations','Engineering & transportation planning','Alley maintenance'] },
+  { name: 'Administration', pct: 0.084, type: 'ops', color: '#534AB7',
+    desc: 'Village leadership, legal counsel, human resources, communications, and regulatory hearings.',
+    services: ['Board of Trustees','Village Manager\'s Office','Legal & corporate counsel','Human Resources','DEI & Community Relations','Communications & marketing','Adjudication hearings','Economic Vitality'] },
+  { name: 'Development Services', pct: 0.049, type: 'ops', color: '#0F6E56',
+    desc: 'Planning, zoning, permits, inspections, and business licensing.',
+    services: ['Planning & zoning review','Building permits & inspections','Business licensing & regulation','Economic development','Arts Council (OPAAC) subsidy','Visit Oak Park subsidy'],
+    note: 'Some functions were reorganized mid-cycle in 2025 and may appear to overlap with Neighborhood Services.' },
+  { name: 'Neighborhood Services', pct: 0.040, type: 'ops', color: '#1D9E75',
+    desc: 'Code compliance, housing programs, residential licensing, and community partnerships.',
+    services: ['Neighborhood code compliance','Residential & multi-family rental licensing','Housing programs & rehabilitation','Lead hazard reduction','Housing Authority (OPHA) subsidy','Oak Park Residential Corp (OPRC) subsidy','Community services'],
+    note: 'Some functions were reorganized mid-cycle in 2025 and may appear to overlap with Development Services.' },
+  { name: 'Information Technology', pct: 0.022, type: 'ops', color: '#5F5E5A',
+    desc: 'Network infrastructure, software, hardware, and telecom across all Village departments.',
+    services: ['Network & telecommunications infrastructure','Hardware maintenance & replacement','Enterprise software licensing','Cybersecurity','Help desk & user support'] },
+  { name: 'Public Health', pct: 0.015, type: 'ops', color: '#3B6D11',
+    desc: 'Environmental health, community wellness, animal control, and emergency preparedness.',
+    services: ['Environmental health inspections','Community health programs','Animal control','Health education','Emergency preparedness','Beekeeping regulation'] },
+  { name: 'Village Clerk', pct: 0.005, type: 'ops', color: '#993556',
+    desc: 'Official records, meeting support, public notices, and FOIA administration.',
+    services: ['Official records management','Board & commission support','Meeting minutes & agendas','Public notices & legal postings','Freedom of Information Act (FOIA)'] },
+  { name: 'Police + Fire pensions', pct: null, type: 'pension', color: '#993C1D',
+    desc: 'Pension obligations for sworn police and fire personnel, funded by a separate independent levy outside Village budget control.',
+    services: ['Police pension fund (40 ILCS 5/3)','Firefighters pension fund (40 ILCS 5/4)','Independent levy authority — set by actuarial requirement'] },
+];
+
+let tax = 10000, excl = new Set(), expanded = new Set(), showMonthly = false;
+
+function dv(d) { return d.type === 'pension' ? tax * PP : tax * VP * d.pct; }
+function fmt(n)  { return '$' + Math.round(n).toLocaleString(); }
+function fmtMo(n){ return '$' + (n / 12).toFixed(2) + '/mo'; }
+function fmtBar(v) {
+  return showMonthly ? '$' + (v / 12).toFixed(2) + '/mo' : '$' + v.toFixed(2);
+}
+
+function setPeriod(p) {
+  showMonthly = p === 'monthly';
+  const a = document.getElementById('btn-annual'), m = document.getElementById('btn-monthly');
+  a.style.background = showMonthly ? 'transparent' : 'var(--color-background-primary)';
+  a.style.color      = showMonthly ? 'var(--color-text-secondary)' : 'var(--color-text-primary)';
+  a.style.fontWeight = showMonthly ? '400' : '500';
+  m.style.background = showMonthly ? 'var(--color-background-primary)' : 'transparent';
+  m.style.color      = showMonthly ? 'var(--color-text-primary)' : 'var(--color-text-secondary)';
+  m.style.fontWeight = showMonthly ? '500' : '400';
+  refresh();
+}
+
+function refresh() {
+  const vals = DEPTS.map(dv);
+  const maxV = Math.max(...vals);
+  let total = 0, general = 0, pension = 0, activeDepts = 0;
+  DEPTS.forEach((d, i) => {
+    if (!excl.has(i)) {
+      const v = vals[i];
+      total += v;
+      if (d.type === 'pension') pension += v; else { general += v; activeDepts++; }
+    }
+  });
+  document.getElementById('card-total').textContent      = fmt(total);
+  document.getElementById('card-total-sub').textContent  = 'of ' + fmt(tax);
+  document.getElementById('card-total-mo').textContent   = fmtMo(total);
+  document.getElementById('card-general').textContent    = fmt(general);
+  document.getElementById('card-general-sub').textContent = activeDepts + ' dept' + (activeDepts === 1 ? '' : 's') + ' active';
+  document.getElementById('card-general-mo').textContent  = fmtMo(general);
+  document.getElementById('card-pension').textContent    = fmt(pension);
+  document.getElementById('card-pension-mo').textContent  = fmtMo(pension);
+
+  const container = document.getElementById('bars');
+  container.innerHTML = '';
+
+  DEPTS.forEach((d, i) => {
+    if (i === DEPTS.length - 1) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'display:flex; align-items:center; margin:10px 0 8px;';
+      const l1 = document.createElement('div'); l1.style.cssText = 'flex:1; height:0.5px; background:var(--color-border-tertiary);';
+      const lb = document.createElement('span'); lb.style.cssText = 'font-size:10px; color:var(--color-text-tertiary); white-space:nowrap; padding:0 8px;'; lb.textContent = 'separate 6.7% pension levy';
+      const l2 = document.createElement('div'); l2.style.cssText = 'flex:1; height:0.5px; background:var(--color-border-tertiary);';
+      sep.appendChild(l1); sep.appendChild(lb); sep.appendChild(l2);
+      container.appendChild(sep);
+    }
+
+    const v = vals[i], ex = excl.has(i), isExp = expanded.has(i);
+    const widthPct = (v / maxV) * 100;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; align-items:center; gap:6px; cursor:pointer; padding:2px; border-radius:4px; user-select:none;';
+    row.onmouseenter = () => { if (!ex) row.style.background = 'var(--color-background-secondary)'; };
+    row.onmouseleave = () => { row.style.background = 'transparent'; };
+    row.onclick = () => { excl.has(i) ? excl.delete(i) : excl.add(i); refresh(); };
+
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'width:36%; min-width:100px; font-size:12px; text-align:right; padding-right:8px; flex-shrink:0; line-height:1.3; ' +
+      (ex ? 'color:var(--color-text-tertiary); text-decoration:line-through;' : 'color:var(--color-text-primary);');
+    lbl.textContent = d.name;
+
+    const bw = document.createElement('div');
+    bw.style.cssText = 'flex:1; height:24px; display:flex; align-items:center; min-width:0;';
+    const bar = document.createElement('div');
+    bar.style.cssText = `height:20px; border-radius:3px; min-width:3px; background:${d.color}; opacity:${ex ? 0.12 : 1}; transition:width 0.25s ease, opacity 0.2s ease; width:${widthPct}%;`;
+    bw.appendChild(bar);
+
+    const vl = document.createElement('div');
+    vl.style.cssText = 'min-width:80px; font-size:11px; font-weight:500; padding-left:7px; white-space:nowrap; ' +
+      (ex ? 'color:#A32D2D;' : 'color:var(--color-text-secondary);');
+    vl.textContent = ex ? '−' + fmtBar(v) : fmtBar(v);
+
+    const infoBtn = document.createElement('button');
+    infoBtn.textContent = 'ⓘ';
+    infoBtn.title = isExp ? 'Hide services' : 'Show services';
+    infoBtn.style.cssText = `width:20px; height:20px; border-radius:50%; flex-shrink:0; cursor:pointer; font-size:11px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:0.5px solid ${isExp ? d.color : 'var(--color-border-secondary)'}; background:${isExp ? d.color + '22' : 'transparent'}; color:${isExp ? d.color : 'var(--color-text-tertiary)'};`;
+    infoBtn.onmouseenter = () => { infoBtn.style.background = isExp ? d.color + '33' : 'var(--color-background-secondary)'; };
+    infoBtn.onmouseleave = () => { infoBtn.style.background = isExp ? d.color + '22' : 'transparent'; };
+    infoBtn.onclick = (e) => { e.stopPropagation(); expanded.has(i) ? expanded.delete(i) : expanded.add(i); refresh(); };
+
+    row.appendChild(lbl); row.appendChild(bw); row.appendChild(vl); row.appendChild(infoBtn);
+    container.appendChild(row);
+
+    if (isExp) {
+      const panel = document.createElement('div');
+      panel.style.cssText = `margin:4px 0 8px; margin-left:calc(36% + 14px); padding:10px 12px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); border-left:2px solid ${d.color};`;
+
+      const desc = document.createElement('p');
+      desc.style.cssText = 'font-size:12px; color:var(--color-text-secondary); margin:0 0 8px; line-height:1.5;';
+      desc.textContent = d.desc;
+      panel.appendChild(desc);
+
+      const tags = document.createElement('div');
+      tags.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px;';
+      d.services.forEach(s => {
+        const tag = document.createElement('span');
+        tag.style.cssText = 'font-size:11px; padding:2px 8px; border-radius:3px; background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); color:var(--color-text-secondary);';
+        tag.textContent = s;
+        tags.appendChild(tag);
+      });
+      panel.appendChild(tags);
+
+      if (d.note) {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:11px; color:var(--color-text-tertiary); margin-top:8px; padding:6px 8px; background:var(--color-background-primary); border-radius:4px; line-height:1.5; border-left:2px solid var(--color-border-secondary);';
+        note.textContent = '⚠ ' + d.note;
+        panel.appendChild(note);
+      }
+      container.appendChild(panel);
+    }
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => { excl.clear(); refresh(); });
+document.getElementById('btn-annual').addEventListener('click', () => setPeriod('annual'));
+document.getElementById('btn-monthly').addEventListener('click', () => setPeriod('monthly'));
+document.getElementById('taxInput').addEventListener('input', function() {
+  const v = parseFloat(this.value);
+  if (!isNaN(v) && v > 0) { tax = v; excl.clear(); refresh(); }
+});
+
+refresh();
+</script>
