@@ -60,6 +60,10 @@ body {
     padding: 8px 14px !important;
     font-size: 12px !important;
   }
+  .site-footer {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
 }
 
 @media (max-width: 380px) {
@@ -126,6 +130,14 @@ body {
 <div id="bars"></div>
 <div style="margin-top: 10px; font-size: 11px; color: var(--color-text-tertiary);">click a bar to exclude it from totals · click ⓘ to see what's included</div>
 </div>
+
+<footer class="site-footer" style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-border-tertiary);">
+  <div>
+    <div style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">Cory J. Wesley</div>
+    <div style="font-size: 12px; color: var(--color-text-secondary);">Oak Park Village Trustee · <a href="https://corywesley.com" target="_blank" rel="noopener" style="color: var(--color-text-secondary);">corywesley.com</a></div>
+  </div>
+  <div style="font-size: 11px; color: var(--color-text-tertiary); line-height: 1.5;">Based on Village of Oak Park FY2025 adopted budget</div>
+</footer>
 
 <script>
 const VP = 0.085, PP = 0.067;
@@ -257,7 +269,7 @@ function refresh() {
     infoBtn.style.cssText = `width:20px; height:20px; border-radius:50%; flex-shrink:0; cursor:pointer; font-size:11px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:0.5px solid ${isExp ? d.color : 'var(--color-border-secondary)'}; background:${isExp ? d.color + '22' : 'transparent'}; color:${isExp ? d.color : 'var(--color-text-tertiary)'};`;
     infoBtn.onmouseenter = () => { infoBtn.style.background = isExp ? d.color + '33' : 'var(--color-background-secondary)'; };
     infoBtn.onmouseleave = () => { infoBtn.style.background = isExp ? d.color + '22' : 'transparent'; };
-    infoBtn.onclick = (e) => { e.stopPropagation(); expanded.has(i) ? expanded.delete(i) : expanded.add(i); refresh(); };
+    infoBtn.onclick = (e) => { e.stopPropagation(); if (expanded.has(i)) { expanded.delete(i); } else { expanded.clear(); expanded.add(i); } refresh(); };
 
     row.appendChild(lbl); row.appendChild(bw); row.appendChild(vl); row.appendChild(infoBtn);
     container.appendChild(row);
